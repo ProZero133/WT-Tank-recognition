@@ -1,0 +1,26 @@
+version: '3.8'
+services:
+  yolo_runtime:
+    image: us-docker.pkg.dev/colab-images/public/runtime
+    container_name: yolo_runtime
+    ports:
+      - "127.0.0.1:9000:8080"
+    volumes:
+      - ./data:/app/data  # Carpeta local para archivos de configuración y datos
+      - ./models:/app/models  # Carpeta local para el modelo YOLOv8 y modelos entrenados
+      - ./images:/app/images  # Carpeta local para imágenes de entrada/salida
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]  # Habilitar GPU
+    command: >
+      sh -c "
+      pip install ultralytics &&
+      python -c 'from ultralytics import YOLO; 
+                 model = YOLO(\"/app/models/yolov8s.pt\");
+                 results = model(\"/app/images/test.jpg\");
+                 results[0].plot(font_size=10, pil=True);'
+      "
+    restart: unless-stopped
